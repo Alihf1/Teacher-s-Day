@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="style.css">
   <!-- مكتبة الاحتفالات (Confetti) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- صوت الفوز -->
+  <audio id="win-sound" preload="auto" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 </head>
 <body>
 
@@ -96,7 +98,7 @@
         <div class="sparkle-icon">✨</div>
         <h3 class="success-title">إجابة متميزة وموفقة!</h3>
         <p class="success-desc">فاض عطاؤك، والآن حان وقت سقي غرسك ليشهد على نموه.</p>
-        <button class="btn-gold" onclick="waterPlant()">اسقِ البذرة بالماء 💧</button>
+        <button class="btn-gold" id="water-hold-btn">اضغط واستمر لمدة ١ ثانية للسقي 💧</button>
       </div>
     </section>
 
