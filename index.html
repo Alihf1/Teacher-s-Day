@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>رحلة العطاء والنمو - تكريم المعلم</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- مكتبة الاحتفالات (Confetti) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+  <div class="background-blobs">
+    <div class="blob blob-1" id="blob1"></div>
+    <div class="blob blob-2" id="blob2"></div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <div class="game-container" id="game-card">
+    
+    <!-- الهيدر -->
+    <header class="game-header">
+      <div class="badge">✨ رحلة عطاء معلم</div>
+      <h1>أثرٌ يزهر ويمتد 🌱</h1>
+      <p class="subtitle">كل سؤال تُجيب عنه يسقي غرسك ليزهر حسنى</p>
+    </header>
+
+    <!-- شاشة 1: اختيار النبتة -->
+    <section id="selection-screen" class="screen">
+      <h2 class="section-title">اختر غرسك الخاص للبدء:</h2>
+      <div class="plants-grid">
+        <button class="plant-card" onclick="selectPlant('🌸', 'زهرة الأمل')">
+          <div class="plant-icon-preview">🌸</div>
+          <span class="plant-name">زهرة الأمل</span>
+          <span class="plant-desc">رمز الإلهام والشرارة الأولى</span>
+        </button>
+        <button class="plant-card" onclick="selectPlant('🌻', 'عباد الشمس')">
+          <div class="plant-icon-preview">🌻</div>
+          <span class="plant-name">عباد الشمس</span>
+          <span class="plant-desc">رمز الطموح والرؤية المشرقة</span>
+        </button>
+        <button class="plant-card" onclick="selectPlant('🌷', 'التوليب الملكي')">
+          <div class="plant-icon-preview">🌷</div>
+          <span class="plant-name">التوليب الملكي</span>
+          <span class="plant-desc">رمز التقدير والوقار</span>
+        </button>
+        <button class="plant-card" onclick="selectPlant('🌿', 'الغصن الأخضر')">
+          <div class="plant-icon-preview">🌿</div>
+          <span class="plant-name">الغصن الأخضر</span>
+          <span class="plant-desc">رمز الاستدامة والأثر الباقي</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- شاشة 2: الأسئلة والسقي -->
+    <section id="quiz-screen" class="screen hidden">
+      <div class="status-card">
+        <div class="status-item">
+          <span class="label">الغرس المختار:</span>
+          <strong id="chosen-plant-name" class="value"></strong>
+        </div>
+        <div class="status-item">
+          <span class="label">السقي والنمو:</span>
+          <strong class="value"><span id="water-count">0</span>/5 💧</strong>
+        </div>
+      </div>
+
+      <div class="progress-wrapper">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+
+      <div class="stage-view">
+        <!-- دلو السقي مع قطرات الماء التفاعلية -->
+        <div id="watering-can" class="watering-can hidden">
+          <span class="can-icon">🪣</span>
+          <div class="water-drops">
+            <span>💧</span><span>💧</span><span>💧</span>
+          </div>
+        </div>
+        
+        <div id="growth-glow" class="glow-ring"></div>
+        <div id="plant-stage" class="plant-avatar">🫘</div>
+        <div id="stage-text" class="stage-label">مرحلة البذرة</div>
+      </div>
+
+      <!-- بطاقة السؤال -->
+      <div id="question-card" class="glass-card">
+        <div id="question-tag" class="q-tag">سؤال تربوي</div>
+        <h3 id="question-text">نص السؤال هنا...</h3>
+        <div id="options-container" class="options-list"></div>
+      </div>
+
+      <!-- بطاقة السقي التفاعلية -->
+      <div id="water-action-card" class="glass-card hidden">
+        <div class="sparkle-icon">✨</div>
+        <h3 class="success-title">إجابة متميزة وموفقة!</h3>
+        <p class="success-desc">فاض عطاؤك، والآن حان وقت سقي غرسك ليشهد على نموه.</p>
+        <button class="btn-gold" onclick="waterPlant()">اسقِ البذرة بالماء 💧</button>
+      </div>
+    </section>
+
+    <!-- شاشة 3: التكريم والنتيجة -->
+    <section id="result-screen" class="screen hidden">
+      <div class="gold-halo">
+        <div class="final-plant" id="final-plant-icon">🌺</div>
+      </div>
+      
+      <h2 class="victory-title">أزهر غرسك بجميل عطائك!</h2>
+      <p class="appreciation-text">
+        شكراً لك معلمي الفاضل.. جهودك لم تكن مجرد دروس، بل أثراً راسخاً ينمو في عقول وقلوب طلابك طوال العام.
+      </p>
+
+      <div class="wisdom-card">
+        <div class="wisdom-header">
+          <span>💡 رسالة تقدير وحكمة</span>
+        </div>
+        <p id="wisdom-text">"من علّم الناس الخير، جرى أجره ونفعه في الدنيا والآخرة."</p>
+      </div>
+
+      <button class="btn-secondary" onclick="resetGame()">إعادة الرحلة 🔄</button>
+    </section>
+
+  </div>
+
+  <footer class="page-footer">
+    <p class="page-footer-text">© 2026 جميع الحقوق محفوظة لـ TECHNOLOGY.ALI</p>
+  </footer>
+
+  <script src="script.js"></script>
+  <footer class="ali-table-footer">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <img src="logo.png" alt="TECHNOLOGY.ALI Logo" style="max-width: 30px; height: auto; border-radius: 50%; background-color: rgba(0, 0, 0, 0.5); padding: 4px;">
+            <p style="margin: 0;">© 2026 جميع الحقوق محفوظة لـ <strong>TECHNOLOGY.ALI</strong></p>
+        </div>
+    </footer>
+</body>
+</html>
