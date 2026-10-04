@@ -146,11 +146,17 @@ function triggerWatering() {
     waterBtn.classList.remove('holding');
   }
 
-  wateringCan.classList.remove('hidden');
+  if (wateringCan) {
+    wateringCan.classList.remove('hidden');
+    wateringCan.classList.remove('pouring');
+  }
   plantAvatar.classList.add('plant-pulse');
 
   setTimeout(() => {
-    wateringCan.classList.add('hidden');
+    if (wateringCan) {
+      wateringCan.classList.add('hidden');
+      wateringCan.classList.remove('pouring');
+    }
     plantAvatar.classList.remove('plant-pulse');
     if (waterBtn) {
       waterBtn.disabled = false;
@@ -183,10 +189,15 @@ function startWaterHold() {
   waterIsHolding = true;
   waterHoldStartTime = Date.now();
   const waterBtn = document.getElementById('water-hold-btn');
+  const wateringCan = document.getElementById('watering-can');
   if (waterBtn) {
     waterBtn.classList.add('holding');
     waterBtn.textContent = 'جارٍ السقي... 💧';
     waterBtn.classList.remove('progress');
+  }
+  if (wateringCan) {
+    wateringCan.classList.remove('hidden');
+    wateringCan.classList.add('pouring');
   }
   if (waterHoldInterval) clearInterval(waterHoldInterval);
   waterHoldInterval = setInterval(() => {
@@ -215,7 +226,10 @@ function cancelWaterHold() {
   waterIsHolding = false;
   waterHoldElapsed = waterHoldElapsed + (Date.now() - waterHoldStartTime);
   waterHoldStartTime = 0;
-  // لا نوقف المؤقت، نتركه يحسب عند عودة الضغط
+  const wateringCan = document.getElementById('watering-can');
+  if (wateringCan) {
+    wateringCan.classList.add('hidden');
+  }
 }
 
 function endWaterHold() {
@@ -228,9 +242,13 @@ function endWaterHold() {
   }
   if (!waterHoldDone) {
     const waterBtn = document.getElementById('water-hold-btn');
+    const wateringCan = document.getElementById('watering-can');
     if (waterBtn) {
       waterBtn.classList.remove('holding');
       waterBtn.textContent = 'اضغط واستمر لمدة ١ ثانية للسقي 💧';
+    }
+    if (wateringCan) {
+      wateringCan.classList.add('hidden');
     }
   }
 }
