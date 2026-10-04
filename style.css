@@ -27,6 +27,7 @@ body {
   overflow-x: hidden;
   position: relative;
   transition: background 1s ease;
+  flex-direction: column;
 }
 
 /* خلفيات مرحلية متدرجة */
@@ -49,6 +50,17 @@ body.bg-stage-4 { background: linear-gradient(135deg, #2e7d32, #4f9a30, #d4af37)
 
 .blob-1 { background: #2e7d32; top: 10%; right: 15%; }
 .blob-2 { background: #d4af37; bottom: 10%; left: 15%; }
+
+.game-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 550px;
+  gap: 12px;
+}
 
 .game-container {
   position: relative;
@@ -379,6 +391,28 @@ h1 {
 
 .btn-gold:active {
   transform: translateY(0) scale(0.98);
+}
+
+#water-hold-btn.holding {
+  filter: brightness(0.95);
+  position: relative;
+  overflow: hidden;
+}
+
+#water-hold-btn.holding::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: var(--w, 0%);
+  background: rgba(255, 255, 255, 0.28);
+  transition: width 0.05s linear;
+  pointer-events: none;
+}
+
+#water-hold-btn.pressed {
+  opacity: 0.85;
 }
 
 /* الشاشة النهائية والتكريم */
