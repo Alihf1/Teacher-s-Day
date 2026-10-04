@@ -74,22 +74,27 @@ function selectPlant(emoji, name) {
   document.getElementById('selection-screen').classList.add('hidden');
   document.getElementById('quiz-screen').classList.remove('hidden');
   
+  resetQuestions();
   applyStageEffects(0);
   loadQuestion();
 }
 
 function loadQuestion() {
-  const q = questions[currentQuestionIndex];
+  const qList = activeQuestions.length > 0 ? activeQuestions : shuffleQuestionsWithAnswers();
+  if (activeQuestions.length === 0) activeQuestions = qList;
+  const q = qList[currentQuestionIndex];
   document.getElementById('question-text').innerText = q.question;
   
   const optionsContainer = document.getElementById('options-container');
   optionsContainer.innerHTML = '';
 
-  q.options.forEach((opt, index) => {
+  const optionIndices = Array.from({ length: q.options.length }, (_, i) => i);
+  const shuffledOpts = shuffleArray(optionIndices);
+  shuffledOpts.forEach((origIdx) => {
     const btn = document.createElement('button');
     btn.className = 'option-btn';
-    btn.innerText = opt;
-    btn.onclick = () => checkAnswer(index);
+    btn.innerText = q.options[origIdx];
+    btn.onclick = () => checkAnswer(origIdx);
     optionsContainer.appendChild(btn);
   });
 
@@ -98,11 +103,13 @@ function loadQuestion() {
 }
 
 function checkAnswer(selectedIndex) {
-  const correctIndex = questions[currentQuestionIndex].correct;
+  const qList = activeQuestions.length > 0 ? activeQuestions : questions;
+  const correctIndex = qList[currentQuestionIndex].correct;
 
   if (selectedIndex === correctIndex) {
     document.getElementById('question-card').classList.add('hidden');
     document.getElementById('water-action-card').classList.remove('hidden');
+    attachWaterHoldEvents();
   } else {
     const optionBtns = document.querySelectorAll('#options-container .option-btn');
     if (optionBtns[selectedIndex]) {
@@ -113,20 +120,48 @@ function checkAnswer(selectedIndex) {
   }
 }
 
-function waterPlant() {
+let waterHoldStartTime = 0;
+let waterHoldInterval = null;
+let waterHoldDone = false;
+const WATER_HOLD_MS = 1000;
+
+function triggerWatering() {
+  if (waterHoldDone) return;
+  waterHoldDone = true;
+
+  if (waterHoldInterval) {
+    clearInterval(waterHoldInterval);
+    waterHoldInterval = null;
+  }
+
   waterLevel++;
-  
+
   const wateringCan = document.getElementById('watering-can');
   const plantAvatar = document.getElementById('plant-stage');
-  
-  // إظهار دلو السقي والقطرات المتحركة
+  const waterBtn = document.getElementById('water-hold-btn');
+
+  if (waterBtn) {
+    waterBtn.disabled = true;
+    waterBtn.classList.add('pressed');
+    waterBtn.classList.remove('holding');
+  }
+
   wateringCan.classList.remove('hidden');
   plantAvatar.classList.add('plant-pulse');
 
   setTimeout(() => {
     wateringCan.classList.add('hidden');
     plantAvatar.classList.remove('plant-pulse');
-    
+    if (waterBtn) {
+      waterBtn.disabled = false;
+      waterBtn.classList.remove('pressed');
+      waterBtn.textContent = 'اضغط واستمر لمدة ١ ثانية للسقي 💧';
+    }
+    waterHoldDone = false;
+    waterHoldStartTime = 0;
+    waterHoldElapsed = 0;
+    waterIsHolding = false;
+
     updateProgress();
     currentQuestionIndex++;
 
@@ -137,6 +172,71 @@ function waterPlant() {
     }
   }, 1000);
 }
+
+
+
+let waterHoldElapsed = 0;
+let waterIsHolding = false;
+
+function startWaterHold() {
+  if (waterHoldDone) return;
+  waterIsHolding = true;
+  waterHoldStartTime = Date.now();
+  const waterBtn = document.getElementById('water-hold-btn');
+  if (waterBtn) {
+    waterBtn.classList.add('holding');
+    waterBtn.textContent = 'جارٍ السقي... 💧';
+    waterBtn.classList.remove('progress');
+  }
+  if (waterHoldInterval) clearInterval(waterHoldInterval);
+  waterHoldInterval = setInterval(() => {
+    if (waterHoldDone) return;
+    const elapsed = waterIsHolding
+      ? waterHoldElapsed + (Date.now() - waterHoldStartTime)
+      : waterHoldElapsed;
+    const progress = Math.min(1, elapsed / WATER_HOLD_MS);
+    if (waterBtn) {
+      if (progress > 0) waterBtn.classList.add('progress');
+      if (waterIsHolding) waterBtn.style.setProperty('--w', progress * 100 + '%');
+    }
+    if (waterIsHolding && elapsed >= WATER_HOLD_MS) {
+      clearInterval(waterHoldInterval);
+      waterHoldInterval = null;
+      waterIsHolding = false;
+      waterHoldElapsed = 0;
+      if (waterBtn) waterBtn.style.removeProperty('--w');
+      triggerWatering();
+    }
+  }, 16);
+}
+
+function cancelWaterHold() {
+  if (!waterIsHolding || waterHoldDone) return;
+  waterIsHolding = false;
+  waterHoldElapsed = waterHoldElapsed + (Date.now() - waterHoldStartTime);
+  waterHoldStartTime = 0;
+  // لا نوقف المؤقت، نتركه يحسب عند عودة الضغط
+}
+
+function endWaterHold() {
+  waterIsHolding = false;
+  waterHoldElapsed = 0;
+  waterHoldStartTime = 0;
+  if (waterHoldInterval) {
+    clearInterval(waterHoldInterval);
+    waterHoldInterval = null;
+  }
+  if (!waterHoldDone) {
+    const waterBtn = document.getElementById('water-hold-btn');
+    if (waterBtn) {
+      waterBtn.classList.remove('holding');
+      waterBtn.textContent = 'اضغط واستمر لمدة ١ ثانية للسقي 💧';
+    }
+  }
+}
+
+function waterPlant() {}
+
 
 function updateProgress() {
   document.getElementById('water-count').innerText = waterLevel;
@@ -177,6 +277,16 @@ function showFinalResult() {
   if (typeof confetti === 'function') {
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
   }
+
+  try {
+    const audio = new Audio('win.mp3');
+    audio.volume = 0.7;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+    setTimeout(() => {
+      try { audio.pause(); audio.currentTime = 0; } catch (e) {}
+    }, 1000);
+  } catch (e) {}
 }
 
 function showToast(title, message, type = 'info') {
@@ -201,9 +311,77 @@ function showToast(title, message, type = 'info') {
   }, 1600);
 }
 
+function attachWaterHoldEvents() {
+  const waterBtn = document.getElementById('water-hold-btn');
+  if (!waterBtn) return;
+  waterBtn.removeEventListener('mousedown', startWaterHold);
+  waterBtn.removeEventListener('mouseup', endWaterHold);
+  waterBtn.removeEventListener('mouseleave', endWaterHold);
+  waterBtn.removeEventListener('touchstart', () => {});
+  waterBtn.removeEventListener('touchend', () => {});
+  waterBtn.removeEventListener('touchcancel', () => {});
+
+  waterBtn.addEventListener('mousedown', startWaterHold);
+  waterBtn.addEventListener('mouseup', endWaterHold);
+  waterBtn.addEventListener('mouseleave', endWaterHold);
+  waterBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startWaterHold(); }, { passive: false });
+  waterBtn.addEventListener('touchend', (e) => { e.preventDefault(); endWaterHold(); }, { passive: false });
+  waterBtn.addEventListener('touchcancel', (e) => { e.preventDefault(); endWaterHold(); }, { passive: false });
+}
+
+function shuffleArray(arr) {
+  const array = arr.slice();
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+let activeQuestions = [];
+
+function resetQuestions() {
+  activeQuestions = shuffleQuestionsWithAnswers();
+  currentQuestionIndex = 0;
+}
+
+function shuffleQuestionsWithAnswers() {
+  const indices = Array.from({ length: questions.length }, (_, i) => i);
+  const shuffledIndices = shuffleArray(indices);
+  const shuffledQuestions = shuffledIndices.map((origIndex) => {
+    const q = questions[origIndex];
+    const optionIndices = Array.from({ length: q.options.length }, (_, i) => i);
+    const shuffledOptionIndices = shuffleArray(optionIndices);
+    const newOptions = shuffledOptionIndices.map((oi) => q.options[oi]);
+    const newCorrect = shuffledOptionIndices.indexOf(q.correct);
+    return {
+      question: q.question,
+      options: newOptions,
+      correct: newCorrect
+    };
+  });
+  return shuffledQuestions;
+}
+
 function resetGame() {
   currentQuestionIndex = 0;
   waterLevel = 0;
+  waterHoldDone = false;
+  waterIsHolding = false;
+  waterHoldElapsed = 0;
+  waterHoldStartTime = 0;
+  if (waterHoldInterval) {
+    clearInterval(waterHoldInterval);
+    waterHoldInterval = null;
+  }
+  const waterBtn = document.getElementById('water-hold-btn');
+  if (waterBtn) {
+    waterBtn.disabled = false;
+    waterBtn.classList.remove('holding', 'pressed', 'progress');
+    waterBtn.style.removeProperty('--w');
+    waterBtn.textContent = 'اضغط واستمر لمدة ١ ثانية للسقي 💧';
+  }
+  resetQuestions();
   document.body.className = '';
   document.getElementById('progress-bar').style.width = '0%';
   document.getElementById('water-count').innerText = '0';
